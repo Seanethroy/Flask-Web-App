@@ -1,0 +1,6 @@
+{
+    "Chocolate": {"price": 8},
+    "Card": {"price": 5},
+    "Vase": {"price": 25},
+    "Teddy Bear": {"price": 15}
+}

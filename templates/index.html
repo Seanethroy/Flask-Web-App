@@ -1,11 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Website</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Home - Flower Shop{% endblock %}
+
+{% block content %}
+<h2>Welcome to Our Flower Shop 🌸</h2>
+
+<h3>Select a Flower</h3>
+<form action="{{ url_for('add_to_cart') }}" method="post">
+    <select name="flower" required>
+        {% for flower, details in flowers.items() %}
+            <option value="{{ flower }}">{{ flower }} - ${{ details.price }}</option>
+        {% endfor %}
+    </select>
+    <input type="number" name="quantity" min="1" value="1" required>
+    <button type="submit">Add to Cart</button>
+</form>
+
+<h3>Add-ons</h3>
+<ul>
+    {% for addon, details in addons.items() %}
+        <li>{{ addon }} - ${{ details.price }}</li>
+    {% endfor %}
+</ul>
+
+<h3>Your Cart</h3>
+{% if cart %}
+    <ul>
+    {% for item, details in cart.items() %}
+        <li>
+            {{ item }} × {{ details.quantity }} = ${{ details.quantity * details.price }}
+            <a href="{{ url_for('remove_from_cart', item=item) }}">Remove</a>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Your cart is empty.</p>
+{% endif %}
+{% endblock %}
