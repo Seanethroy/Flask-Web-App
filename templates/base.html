@@ -18,12 +18,11 @@
     </header>
 
     <!-- Flash Messages -->
+        <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             {% for message in messages %}
-                <p style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px;">
-                    {{ message }}
-                </p>
+                <div class="flash">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}

@@ -41,7 +41,7 @@ def add_to_cart():
 def remove_from_cart(item):
     if 'cart' in session and item in session['cart']:
         del session['cart'][item]
-        flash(f"🗑️ Removed {item} from cart.")
+        flash(f"🗑️ Removed all {item} from the cart.")   # Improved message
     return redirect(url_for('home'))
 
 @app.route('/about')
