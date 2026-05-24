@@ -13,18 +13,22 @@
         {% endfor %}
     </select>
     <input type="number" name="quantity" min="1" value="1" required>
-    <button type="submit">Add to Cart</button>
+    <button type="submit">Add Flower to Cart</button>
 </form>
 
-<h3>Add-ons</h3>
-<ul>
+<h3>Select Add-ons</h3>
+<form action="{{ url_for('select_addons') }}" method="post">
     {% for addon, details in addons.items() %}
-        <li>{{ addon }} - ${{ details.price }}</li>
+        <label>
+            <input type="checkbox" name="addons" value="{{ addon }}">
+            {{ addon }} - ${{ details.price }}
+        </label><br>
     {% endfor %}
-</ul>
+    <button type="submit">Add Selected Add-ons</button>
+</form>
 
 <h3>Your Cart</h3>
-{% if cart %}
+{% if cart or selected_addons %}
     <ul>
     {% for item, details in cart.items() %}
         <li>
@@ -32,6 +36,11 @@
             <a href="{{ url_for('remove_from_cart', item=item) }}">Remove</a>
         </li>
     {% endfor %}
+    {% if selected_addons %}
+        {% for addon, price in selected_addons.items() %}
+        <li>{{ addon }} - ${{ price }}</li>
+        {% endfor %}
+    {% endif %}
     </ul>
 {% else %}
     <p>Your cart is empty.</p>
