@@ -1,8 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Invoices - Flower Shop{% endblock %}
+{% block title %}Invoice - Flower Shop{% endblock %}
 
 {% block content %}
-<h2>Invoices</h2>
-<p>This page will show your customer invoice after checkout (coming soon).</p>
+<h2>Thank You, {{ customer_name }}! 🌸</h2>
+<h3>Invoice</h3>
+
+<h4>Your Order:</h4>
+<ul>
+    {% for item, details in cart.items() %}
+        <li>{{ item }} × {{ details.quantity }} = ${{ details.quantity * details.price }}</li>
+    {% endfor %}
+    {% for addon, price in selected_addons.items() %}
+        <li>{{ addon }} - ${{ price }}</li>
+    {% endfor %}
+</ul>
+
+<h3>Grand Total: ${{ '%.2f'|format(total) }}</h3>
+
+<p><a href="{{ url_for('home') }}">Return to Home</a></p>
 {% endblock %}
