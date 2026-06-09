@@ -3,20 +3,79 @@
 {% block title %}Invoice - Flower Shop{% endblock %}
 
 {% block content %}
-<h2>Thank You, {{ customer_name }}! 🌸</h2>
-<h3>Invoice</h3>
 
-<h4>Your Order:</h4>
+<h2>
+    Thank You, {{ customer_name }}! 🌸
+</h2>
+
+<h3>
+    Invoice Number:
+    {{ invoice_number }}
+</h3>
+
+<h4>Flowers</h4>
+
 <ul>
-    {% for item, details in cart.items() %}
-        <li>{{ item }} × {{ details.quantity }} = ${{ details.quantity * details.price }}</li>
-    {% endfor %}
-    {% for addon, price in selected_addons.items() %}
-        <li>{{ addon }} - ${{ price }}</li>
-    {% endfor %}
+
+{% for item, details in cart.items() %}
+
+    <li>
+        {{ item }}
+        ×
+        {{ details.quantity }}
+
+        =
+
+        ${{ "%.2f"|format(
+            details.quantity * details.price
+        ) }}
+    </li>
+
+{% endfor %}
+
 </ul>
 
-<h3>Grand Total: ${{ '%.2f'|format(total) }}</h3>
+{% if selected_addons %}
 
-<p><a href="{{ url_for('home') }}">Return to Home</a></p>
+<h4>Add-ons</h4>
+
+<ul>
+
+{% for addon, price in selected_addons.items() %}
+
+    <li>
+        {{ addon }}
+        -
+        ${{ "%.2f"|format(price) }}
+    </li>
+
+{% endfor %}
+
+</ul>
+
+{% endif %}
+
+<h4>
+    Flower Subtotal:
+    ${{ "%.2f"|format(flower_subtotal) }}
+</h4>
+
+<h4>
+    Add-ons Subtotal:
+    ${{ "%.2f"|format(addon_subtotal) }}
+</h4>
+
+<h2>
+    Grand Total:
+    ${{ "%.2f"|format(total) }}
+</h2>
+
+<p>
+    Thank you for shopping with us!
+</p>
+
+<a href="{{ url_for('home') }}">
+    Return to Home
+</a>
+
 {% endblock %}

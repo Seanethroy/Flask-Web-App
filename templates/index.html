@@ -3,28 +3,61 @@
 {% block title %}Home - Flower Shop{% endblock %}
 
 {% block content %}
+
 <h2>Welcome to Our Flower Shop 🌸</h2>
 
 <h3>Select a Flower</h3>
+
 <form action="{{ url_for('add_to_cart') }}" method="post">
+
     <select name="flower" required>
+
         {% for flower, details in flowers.items() %}
-            <option value="{{ flower }}">{{ flower }} - ${{ details.price }}</option>
+
+            <option value="{{ flower }}">
+                {{ flower }} - ${{ details.price }}
+            </option>
+
         {% endfor %}
+
     </select>
-    <input type="number" name="quantity" min="1" value="1" required>
-    <button type="submit">Add Flower to Cart</button>
+
+    <input type="number"
+           name="quantity"
+           min="1"
+           value="1"
+           required>
+
+    <button type="submit">
+        Add Flower to Cart
+    </button>
+
 </form>
 
 <h3>Select Add-ons</h3>
-<<form action="{{ url_for('select_addon') }}" method="post">
+
+<form action="{{ url_for('select_addon') }}" method="post">
+
     {% for addon, details in addons.items() %}
-        <label> 
-            <input type="checkbox" name="addons" value="{{ addon }}">
+
+        <label>
+
+            <input type="checkbox"
+                   name="addons"
+                   value="{{ addon }}">
+
             {{ addon }} - ${{ details.price }}
-        </label><br>
+
+        </label>
+
+        <br>
+
     {% endfor %}
-    <button type="submit">Add Selected Add-ons</button>
+
+    <button type="submit">
+        Add Selected Add-ons
+    </button>
+
 </form>
 
 <h3>Your Cart</h3>
@@ -32,28 +65,44 @@
 {% if cart or selected_addons %}
 
     <ul>
+
     {% for item, details in cart.items() %}
+
         <li>
-            {{ item }} × {{ details.quantity }}
-            = ${{ details.quantity * details.price }}
+            {{ item }}
+            ×
+            {{ details.quantity }}
+            =
+            ${{ details.quantity * details.price }}
+
             <a href="{{ url_for('remove_from_cart', item=item) }}">
                 Remove
             </a>
+
         </li>
+
     {% endfor %}
+
     </ul>
 
     {% if selected_addons %}
+
         <h3>Add-ons</h3>
 
         <ul>
+
         {% for addon, price in selected_addons.items() %}
+
             <li>
-                {{ addon }} -
+                {{ addon }}
+                -
                 ${{ "%.2f"|format(price) }}
             </li>
+
         {% endfor %}
+
         </ul>
+
     {% endif %}
 
     <h4>
@@ -67,10 +116,8 @@
     </h4>
 
     <h3>
-        <strong>
-            Grand Total:
-            ${{ "%.2f"|format(total) }}
-        </strong>
+        Grand Total:
+        ${{ "%.2f"|format(total) }}
     </h3>
 
     <form action="{{ url_for('checkout') }}" method="post">
@@ -91,12 +138,12 @@
             ✅ Checkout
         </button>
 
-       <button
+        <button
             type="submit"
             formaction="{{ url_for('cancel_order') }}"
-        onclick="return confirm('Are you sure you want to cancel your order?');">
+            onclick="return confirm('Are you sure you want to cancel your order?');">
 
-        Cancel Order
+            ❌ Cancel Order
 
         </button>
 
@@ -107,3 +154,5 @@
     <p>Your cart is empty.</p>
 
 {% endif %}
+
+{% endblock %}
