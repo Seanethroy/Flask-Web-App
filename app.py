@@ -12,27 +12,39 @@ def load_data():
     return flowers, addons
 
 def calculate_total(cart, selected_addons):
-    total = 0
-    # Flowers total
+    flower_subtotal = 0
+    addon_subtotal = 0
+    
+    # Calculate flower subtotal
     for details in cart.values():
-        total += details['price'] * details['quantity']
-    # Add-ons total
+        flower_subtotal += details['price'] * details['quantity']
+    
+    # Calculate add-on subtotal
     for price in selected_addons.values():
-        total += price
-    return total
+        addon_subtotal += price
+    
+    total = flower_subtotal + addon_subtotal
+    return total, flower_subtotal, addon_subtotal
 
 @app.route('/')
 def home():
     flowers, addons = load_data()
     cart = session.get('cart', {})
     selected_addons = session.get('selected_addons', {})
-    total = calculate_total(cart, selected_addons)
+    
+    total, flower_subtotal, addon_subtotal = calculate_total(cart, selected_addons)
+
+    if total > 100:
+     flash("Large order detected!")
+    
     return render_template('index.html', 
                          flowers=flowers, 
                          addons=addons, 
                          cart=cart, 
                          selected_addons=selected_addons,
-                         total=total)
+                         total=total,
+                         flower_subtotal=flower_subtotal,
+                         addon_subtotal=addon_subtotal)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -48,14 +60,23 @@ def checkout():
         flash("❌ Your cart is empty!")
         return redirect(url_for('home'))
     
-    total = calculate_total(cart, selected_addons)
+    total, flower_subtotal, addon_subtotal = calculate_total(
+    cart,
+    selected_addons
+)
+    session.pop("cart", None)
+    session.pop("selected_addons", None)  
     
     # Pass data to invoice
-    return render_template('invoices.html', 
-                         customer_name=customer_name,
-                         cart=cart,
-                         selected_addons=selected_addons,
-                         total=total)
+    return render_template(
+    'invoices.html',
+    customer_name=customer_name,
+    cart=cart,
+    selected_addons=selected_addons,
+    total=total,
+    flower_subtotal=flower_subtotal,
+    addon_subtotal=addon_subtotal
+)
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
@@ -77,32 +98,38 @@ def add_to_cart():
         flash(f"✅ Added {quantity} {flower}(s) to cart!")
     return redirect(url_for('home'))
 
-@app.route('/select_addons', methods=['POST'])
-def select_addons():
-    selected = request.form.getlist('addons')
-    flowers, addons = load_data()
-    
-    if 'selected_addons' not in session:
-        session['selected_addons'] = {}
-    
-    for addon in selected:
+@app.route("/select_addon", methods=["POST"])
+def select_addon():
+
+    _, addons = load_data()
+
+    selected_keys = request.form.getlist("addons")
+
+    selected_addons = {}
+
+    for addon in selected_keys:
+
         if addon in addons:
-            session['selected_addons'][addon] = addons[addon]['price']
-    
-    if selected:
-        flash(f"✅ Added {len(selected)} add-on(s) to cart!")
+
+            selected_addons[addon] = addons[addon]["price"]
+
+    session["selected_addons"] = selected_addons
+
+    if selected_addons:
+        flash(f"{len(selected_addons)} add-ons added to cart.")
     else:
         flash("No add-ons selected.")
-    return redirect(url_for('home'))
+
+    return redirect(url_for("home"))
 
 @app.route('/remove_from_cart/<item>')
 def remove_from_cart(item):
     if 'cart' in session and item in session['cart']:
         del session['cart'][item]
-        flash(f"🗑️ Removed all {item} from the cart.")
+        flash(f"Removed all {item.capitalize()} from the cart.")
     return redirect(url_for('home'))
 
-@app.route('/cancel_order')
+@app.route('/cancel_order', methods=['POST'])
 def cancel_order():
     session.pop('cart', None)
     session.pop('selected_addons', None)

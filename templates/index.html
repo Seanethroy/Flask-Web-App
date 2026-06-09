@@ -17,9 +17,9 @@
 </form>
 
 <h3>Select Add-ons</h3>
-<form action="{{ url_for('select_addons') }}" method="post">
+<<form action="{{ url_for('select_addon') }}" method="post">
     {% for addon, details in addons.items() %}
-        <label>
+        <label> 
             <input type="checkbox" name="addons" value="{{ addon }}">
             {{ addon }} - ${{ details.price }}
         </label><br>
@@ -28,21 +28,82 @@
 </form>
 
 <h3>Your Cart</h3>
+
 {% if cart or selected_addons %}
+
     <ul>
     {% for item, details in cart.items() %}
         <li>
-            {{ item }} × {{ details.quantity }} = ${{ details.quantity * details.price }}
-            <a href="{{ url_for('remove_from_cart', item=item) }}">Remove</a>
+            {{ item }} × {{ details.quantity }}
+            = ${{ details.quantity * details.price }}
+            <a href="{{ url_for('remove_from_cart', item=item) }}">
+                Remove
+            </a>
         </li>
     {% endfor %}
-    {% if selected_addons %}
-        {% for addon, price in selected_addons.items() %}
-        <li>{{ addon }} - ${{ price }}</li>
-        {% endfor %}
-    {% endif %}
     </ul>
+
+    {% if selected_addons %}
+        <h3>Add-ons</h3>
+
+        <ul>
+        {% for addon, price in selected_addons.items() %}
+            <li>
+                {{ addon }} -
+                ${{ "%.2f"|format(price) }}
+            </li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h4>
+        Flower Subtotal:
+        ${{ "%.2f"|format(flower_subtotal) }}
+    </h4>
+
+    <h4>
+        Add-ons Subtotal:
+        ${{ "%.2f"|format(addon_subtotal) }}
+    </h4>
+
+    <h3>
+        <strong>
+            Grand Total:
+            ${{ "%.2f"|format(total) }}
+        </strong>
+    </h3>
+
+    <form action="{{ url_for('checkout') }}" method="post">
+
+        <label for="customer_name">
+            Customer Name:
+        </label>
+
+        <input
+            type="text"
+            id="customer_name"
+            name="customer_name"
+            required>
+
+        <br><br>
+
+        <button type="submit">
+            ✅ Checkout
+        </button>
+
+       <button
+            type="submit"
+            formaction="{{ url_for('cancel_order') }}"
+        onclick="return confirm('Are you sure you want to cancel your order?');">
+
+        Cancel Order
+
+        </button>
+
+    </form>
+
 {% else %}
+
     <p>Your cart is empty.</p>
+
 {% endif %}
-{% endblock %}
