@@ -1,8 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}Order History - Flower Shop{% endblock %}
+{% block title %}Order History{% endblock %}
 
 {% block content %}
+
 <h2>Order History</h2>
-<p>This page will list all your saved orders from the database (coming soon).</p>
+
+<table border="1">
+
+    <tr>
+        <th>Invoice Number</th>
+        <th>Customer</th>
+        <th>Total</th>
+        <th>Date</th>
+        <th>Action</th>
+    </tr>
+
+    {% for order in orders %}
+
+    <tr>
+
+        <td>{{ order.invoice_number }}</td>
+        <td>{{ order.customer_name }}</td>
+        <td>${{ "%.2f"|format(order.total) }}</td>
+        <td>{{ order.date }}</td>
+
+        <td>
+
+            <form
+                action="{{ url_for('cancel_saved_order', order_id=order.order_id) }}"
+                method="post">
+
+                <button
+                    type="submit"
+                    onclick="return confirm('Cancel this order?')">
+
+                    Cancel
+
+                </button>
+
+            </form>
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+</table>
+
 {% endblock %}

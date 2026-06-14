@@ -1,8 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import json
+import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key_123"
+
+def create_database():
+
+    with sqlite3.connect("flower_shop.db") as conn:
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS orders (
+
+                order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoice_number TEXT,
+                customer_name TEXT,
+                items TEXT,
+                addons TEXT,
+                total REAL,
+                date TIMESTAMP
+
+            )
+        """)
+
+        conn.commit()
 
 def load_data():
     with open('data/flowers.json') as f:
@@ -31,7 +55,19 @@ def calculate_total(cart, selected_addons):
 
     total = flower_subtotal + addon_subtotal
 
-    return flower_subtotal, addon_subtotal, total
+    discount_applied = False
+
+    if total > 180:
+
+        total *= 0.9
+        discount_applied = True
+
+    return (
+        flower_subtotal,
+        addon_subtotal,
+        total,
+        discount_applied
+    )
 
 
 @app.route('/')
@@ -42,10 +78,10 @@ def home():
     cart = session.get('cart', {})
     selected_addons = session.get('selected_addons', {})
 
-    flower_subtotal, addon_subtotal, total = calculate_total(
-        cart,
-        selected_addons
-    )
+    flower_subtotal, addon_subtotal, total, discount_applied = calculate_total(
+      cart,
+      selected_addons
+  )
 
     if total > 100:
         flash("Large order detected!")
@@ -58,7 +94,8 @@ def home():
         selected_addons=selected_addons,
         total=total,
         flower_subtotal=flower_subtotal,
-        addon_subtotal=addon_subtotal
+        addon_subtotal=addon_subtotal,
+        discount_applied=discount_applied
     )
 
 
@@ -160,24 +197,99 @@ def checkout():
     if not customer_name:
 
         flash("Please enter your name.")
-
         return redirect(url_for('home'))
 
     if not cart and not selected_addons:
 
         flash("Your cart is empty!")
-
         return redirect(url_for('home'))
 
-    flower_subtotal, addon_subtotal, total = calculate_total(
+    flower_subtotal, addon_subtotal, total, discount_applied = calculate_total(
         cart,
         selected_addons
     )
 
-    invoice_number = "INV001"
+    invoice_number = (
+        "INV" +
+        datetime.now().strftime("%Y%m%d%H%M%S")
+    )
+
+    with sqlite3.connect("flower_shop.db") as conn:
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO orders
+            (
+                invoice_number,
+                customer_name,
+                items,
+                addons,
+                total,
+                date
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            invoice_number,
+            customer_name,
+            json.dumps(cart),
+            json.dumps(selected_addons),
+            total,
+            datetime.now()
+        ))
+
+        conn.commit()
+
+    try:
+
+        with open(
+            f"invoice_{invoice_number}.txt",
+            "w"
+        ) as f:
+
+            f.write(f"Invoice Number: {invoice_number}\n")
+            f.write(f"Customer Name: {customer_name}\n")
+            f.write(f"Total: ${total:.2f}\n")
+
+    except OSError as e:
+
+        flash("Could not generate invoice file.")
+        print(f"Invoice Error: {e}")
+
+    try:
+
+        flowers, _ = load_data()
+
+        for flower, details in cart.items():
+
+            flowers[flower]["stock"] -= details["quantity"]
+
+            if flowers[flower]["stock"] < 0:
+
+                flowers[flower]["stock"] = 0
+
+        with open(
+            "data/flowers.json",
+            "w"
+        ) as f:
+
+            json.dump(
+                flowers,
+                f,
+                indent=4
+            )
+
+    except OSError:
+
+        flash(
+            "Could not update stock file."
+        )
 
     session.pop("cart", None)
     session.pop("selected_addons", None)
+
+    session.modified = True
 
     return render_template(
         'invoices.html',
@@ -187,7 +299,8 @@ def checkout():
         selected_addons=selected_addons,
         total=total,
         flower_subtotal=flower_subtotal,
-        addon_subtotal=addon_subtotal
+        addon_subtotal=addon_subtotal,
+        discount_applied=discount_applied
     )
 
 
@@ -198,13 +311,72 @@ def about():
 
 @app.route('/order_history')
 def order_history():
-    return render_template('order_history.html')
+
+    orders = []
+
+    with sqlite3.connect(
+        "flower_shop.db"
+    ) as conn:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM orders"
+        )
+
+        rows = cursor.fetchall()
+
+        for row in rows:
+
+            orders.append({
+
+                "order_id": row[0],
+                "invoice_number": row[1],
+                "customer_name": row[2],
+                "items": json.loads(row[3]),
+                "addons": json.loads(row[4]),
+                "total": row[5],
+                "date": row[6]
+            })
+
+    return render_template(
+        "order_history.html",
+        orders=orders
+    )
 
 
 @app.route('/invoices')
 def invoices():
     return render_template('invoices.html')
 
+@app.route(
+    "/cancel_saved_order/<int:order_id>",
+    methods=["POST"]
+)
+def cancel_saved_order(order_id):
+
+    with sqlite3.connect(
+        "flower_shop.db"
+    ) as conn:
+
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "DELETE FROM orders WHERE order_id=?",
+            (order_id,)
+        )
+
+        conn.commit()
+
+    flash("Order cancelled.")
+
+    return redirect(
+        url_for("order_history")
+    )
+
 
 if __name__ == '__main__':
+
+    create_database()
+
     app.run(debug=True)
