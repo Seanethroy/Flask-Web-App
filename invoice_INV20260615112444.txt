@@ -1,0 +1,3 @@
+Invoice Number: INV20260615112444
+Customer Name: Aris
+Total: $36.00
